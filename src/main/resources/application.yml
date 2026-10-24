@@ -1,0 +1,24 @@
+spring:
+  profiles:
+    active: '@spring.profiles.active@'   # substituted by the active Maven profile (dev/prod/test)
+  application:
+    name: sis1-task-api
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: never   # we build our own unified error body instead
+
+logging:
+  level:
+    root: INFO
+    com.example.sis1: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"

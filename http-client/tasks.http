@@ -1,0 +1,147 @@
+### SIS1 Task API — HTTP Client collection
+### Open this file in IntelliJ IDEA / WebStorm ("Run" arrow next to each request)
+### or in VS Code with the "REST Client" extension.
+### Run the app first: mvn spring-boot:run  (dev profile, H2 in-memory DB)
+### Requests are meant to be run top to bottom in order — later ones (409, update,
+### delete) depend on tasks created by the earlier ones.
+
+@baseUrl = http://localhost:8080/api/tasks
+
+
+### 1. Create task A — valid payload -> 201 Created (+ Location header)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "title": "Prepare SIS1 report",
+  "description": "Write the report covering weeks 1-4 material",
+  "priority": "HIGH",
+  "dueDate": "2026-10-15"
+}
+
+
+### 2. Create a task with a title that already exists -> 409 Conflict
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "title": "Prepare SIS1 report",
+  "priority": "LOW"
+}
+
+
+### 3. Create task B — a second, distinct task (used later for the update-conflict demo)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "title": "Review teammate's PR",
+  "description": "Look over the pull request before merge",
+  "priority": "MEDIUM",
+  "dueDate": "2026-10-05"
+}
+
+
+### 4. Create a task — invalid payload -> 400 Bad Request (unified ApiError, field errors list)
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+  "title": "a",
+  "dueDate": "2020-01-01"
+}
+
+
+### 5. Create a task — malformed JSON body -> 400 Bad Request
+POST {{baseUrl}}
+Content-Type: application/json
+
+{ "title": "Broken JSON", "priority": }
+
+
+### 6. Get all tasks — first page, default page size -> 200 OK
+GET {{baseUrl}}
+
+
+### 7. Get all tasks — filtered by status, paginated and sorted -> 200 OK
+GET {{baseUrl}}?status=NEW&page=0&size=5&sort=dueDate,asc
+
+
+### 8. Get task by id -> 200 OK
+GET {{baseUrl}}/1
+
+
+### 9. Get task by non-existent id -> 404 Not Found (unified ApiError)
+GET {{baseUrl}}/9999
+
+
+### 10. Get task by malformed id (not a number) -> 400 Bad Request
+GET {{baseUrl}}/abc
+
+
+### 11. Full update of task A -> 200 OK
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "title": "Prepare SIS1 report (final)",
+  "description": "Updated description after review",
+  "status": "IN_PROGRESS",
+  "priority": "HIGH",
+  "dueDate": "2026-10-20"
+}
+
+
+### 12. Update task B with task A's current title -> 409 Conflict
+PUT {{baseUrl}}/2
+Content-Type: application/json
+
+{
+  "title": "Prepare SIS1 report (final)",
+  "priority": "MEDIUM"
+}
+
+
+### 13. Update a non-existent task -> 404 Not Found
+PUT {{baseUrl}}/9999
+Content-Type: application/json
+
+{
+  "title": "Ghost task",
+  "priority": "LOW"
+}
+
+
+### 14. Update with invalid data (title too short) -> 400 Bad Request
+PUT {{baseUrl}}/1
+Content-Type: application/json
+
+{
+  "title": "ab"
+}
+
+
+### 15. Partial update — change status only -> 200 OK
+PATCH {{baseUrl}}/1/status
+Content-Type: application/json
+
+{
+  "status": "DONE"
+}
+
+
+### 16. Partial update — invalid enum value -> 400 Bad Request
+PATCH {{baseUrl}}/1/status
+Content-Type: application/json
+
+{
+  "status": "FINISHED"
+}
+
+
+### 17. Delete task A -> 204 No Content
+DELETE {{baseUrl}}/1
+
+
+### 18. Delete a non-existent task -> 404 Not Found
+DELETE {{baseUrl}}/9999
